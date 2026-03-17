@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Budget Tracker | Minimalist</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .sidebar-item.active {
+            background-color: #1e293b;
+            color: white;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .transaction-row {
+            transition: all 0.2s ease;
+        }
+        .transaction-row:hover {
+            background-color: #f1f5f9;
+            transform: translateX(4px);
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-in {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-slate-200 p-6 flex flex-col gap-8 hidden md:flex">
+        <div class="flex items-center gap-3 px-2">
+            <div class="w-9 h-9 bg-slate-900 rounded-xl flex items-center justify-center text-white">
+                <i data-lucide="wallet" class="w-5 h-5"></i>
+            </div>
+            <h1 class="font-bold text-xl tracking-tight">FinTrack</h1>
+        </div>
+
+        <nav class="flex flex-col gap-2">
+            <button onclick="switchView('dashboard')" id="nav-dashboard" class="sidebar-item active flex items-center gap-3 px-4 py-3 rounded-xl transition-all">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                <span class="font-medium">Dashboard</span>
+            </button>
+            <button onclick="switchView('analytics')" id="nav-analytics" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all">
+                <i data-lucide="pie-chart" class="w-5 h-5"></i>
+                <span class="font-medium">Analytics</span>
+            </button>
+            <button onclick="switchView('settings')" id="nav-settings" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all">
+                <i data-lucide="settings" class="w-5 h-5"></i>
+                <span class="font-medium">Settings</span>
+            </button>
+        </nav>
+
+        <div class="mt-auto p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Monthly Tip</p>
+            <p id="monthly-tip" class="text-sm text-slate-600 leading-relaxed">Save at least 20% of your allowance for emergencies.</p>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-4 md:p-10 max-w-6xl mx-auto w-full">
+        <!-- Dashboard View -->
+        <section id="dashboard-view" class="view-section">
+            <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
+                <div>
+                    <h2 class="text-3xl font-bold text-slate-900 tracking-tight">Welcome back, <span id="display-name">Student</span></h2>
+                    <p class="text-slate-500">Manage your daily expenses with ease.</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Spent</p>
+                        <p id="total-spent" class="text-4xl font-black text-slate-900">$0.00</p>
+                    </div>
+                </div>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left Column: Form -->
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 space-y-6">
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="p-2 bg-slate-100 rounded-lg">
+                                <i data-lucide="plus-circle" class="w-5 h-5 text-slate-600"></i>
+                            </div>
+                            <h3 class="font-bold text-lg">New Transaction</h3>
+                        </div>
+
+                        <form id="expense-form" class="space-y-5">
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-slate-500 uppercase">Expense Name</label>
+                                <input type="text" id="expense-name" required placeholder="e.g. Lunch at Cafeteria" 
+                                    class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 transition-all">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-slate-500 uppercase">Amount ($)</label>
+                                <div class="relative">
+                                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
+                                    <input type="number" id="expense-amount" required step="0.01" placeholder="0.00" 
+                                        class="w-full pl-8 pr-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 transition-all">
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-slate-500 uppercase">Category</label>
+                                <select id="expense-category" class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 transition-all appearance-none bg-white">
+                                    <option value="Food">🍔 Food</option>
+                                    <option value="Transport">🚌 Transport</option>
+                                    <option value="Study">📚 Study</option>
+                                    <option value="Entertainment">🎬 Entertainment</option>
+                                    <option value="Other">✨ Other</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 active:scale-95">
+                                Add Transaction
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-emerald-50 p-5 rounded-3xl border border-emerald-100">
+                            <p class="text-xs font-bold text-emerald-600 uppercase mb-1">Budget</p>
+                            <p id="display-budget" class="text-xl font-bold text-emerald-900">$500.00</p>
+                        </div>
+                        <div class="bg-amber-50 p-5 rounded-3xl border border-amber-100">
+                            <p class="text-xs font-bold text-amber-600 uppercase mb-1">Remaining</p>
+                            <p id="display-remaining" class="text-xl font-bold text-amber-900">$0.00</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Table -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <h3 class="font-bold text-lg">Recent Transactions</h3>
+                            <span id="transaction-count" class="text-xs font-bold px-3 py-1 bg-white border border-slate-200 text-slate-500 rounded-full shadow-sm">
+                                0 Items
+                            </span>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                                        <th class="px-8 py-4">Transaction</th>
+                                        <th class="px-8 py-4">Category</th>
+                                        <th class="px-8 py-4">Amount</th>
+                                        <th class="px-8 py-4 text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="expense-list" class="divide-y divide-slate-50">
+                                    <!-- Transactions will appear here -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div id="empty-state" class="py-20 text-center space-y-4">
+                            <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto">
+                                <i data-lucide="receipt" class="w-10 h-10 text-slate-200"></i>
+                            </div>
+                            <p class="text-slate-400 font-medium">No transactions found. Start by adding one!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Analytics View -->
+        <section id="analytics-view" class="view-section hidden">
+            <header class="mb-10">
+                <h2 class="text-3xl font-bold text-slate-900 tracking-tight text-center md:text-left">Spending Insights</h2>
+                <p class="text-slate-500 text-center md:text-left">Analyze where your money goes.</p>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Category Breakdown -->
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-lg mb-6 flex items-center gap-2">
+                        <i data-lucide="bar-chart-3" class="w-5 h-5 text-slate-400"></i>
+                        Category Breakdown
+                    </h3>
+                    <div id="category-stats" class="space-y-6">
+                        <!-- Stats will be injected here -->
+                    </div>
+                </div>
+
+                <!-- Summary & Trend -->
+                <div class="space-y-6">
+                    <!-- Spending Trend (Simulated) -->
+                    <div class="bg-white p-8 rounded-3xl border border-slate-200">
+                        <h3 class="font-bold text-lg mb-6 flex items-center gap-2">
+                            <i data-lucide="line-chart" class="w-5 h-5 text-slate-400"></i>
+                            Weekly Trend
+                        </h3>
+                        <div class="flex items-end justify-between h-32 gap-2 px-2">
+                            <div class="flex-1 bg-slate-100 rounded-t-lg h-[40%] hover:bg-slate-200 transition-all cursor-help" title="Mon: $12"></div>
+                            <div class="flex-1 bg-slate-100 rounded-t-lg h-[65%] hover:bg-slate-200 transition-all cursor-help" title="Tue: $24"></div>
+                            <div class="flex-1 bg-slate-100 rounded-t-lg h-[30%] hover:bg-slate-200 transition-all cursor-help" title="Wed: $8"></div>
+                            <div class="flex-1 bg-slate-100 rounded-t-lg h-[85%] hover:bg-slate-200 transition-all cursor-help" title="Thu: $42"></div>
+                            <div class="flex-1 bg-slate-900 rounded-t-lg h-[55%] hover:bg-slate-800 transition-all cursor-help" title="Fri: $18"></div>
+                            <div class="flex-1 bg-slate-100 rounded-t-lg h-[20%] hover:bg-slate-200 transition-all cursor-help" title="Sat: $5"></div>
+                            <div class="flex-1 bg-slate-100 rounded-t-lg h-[15%] hover:bg-slate-200 transition-all cursor-help" title="Sun: $2"></div>
+                        </div>
+                        <div class="flex justify-between mt-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1">
+                            <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 p-8 rounded-3xl text-white shadow-xl">
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-2">Most Expensive Category</p>
+                        <h4 id="top-category" class="text-3xl font-bold">None</h4>
+                        <div class="mt-4 flex items-center gap-2 text-slate-400 text-sm">
+                            <i data-lucide="trending-up" class="w-4 h-4"></i>
+                            <span>Based on total volume</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-8 rounded-3xl border border-slate-200">
+                        <h3 class="font-bold text-lg mb-4">Budget Utilization</h3>
+                        <div class="relative pt-1">
+                            <div class="flex mb-2 items-center justify-between">
+                                <div>
+                                    <span id="budget-percent-label" class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-slate-600 bg-slate-100">
+                                        0% Used
+                                    </span>
+                                </div>
+                                <div class="text-right">
+                                    <span id="budget-percent-value" class="text-xs font-semibold inline-block text-slate-600">
+                                        $0 / $500
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="overflow-hidden h-3 mb-4 text-xs flex rounded-full bg-slate-100">
+                                <div id="budget-progress-bar" style="width:0%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-slate-900 transition-all duration-500"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Settings View -->
+        <section id="settings-view" class="view-section hidden">
+            <header class="mb-10">
+                <h2 class="text-3xl font-bold text-slate-900 tracking-tight text-center md:text-left">Preferences</h2>
+                <p class="text-slate-500 text-center md:text-left">Customize your experience.</p>
+            </header>
+
+            <div class="max-w-2xl mx-auto bg-white p-8 md:p-10 rounded-3xl shadow-sm border border-slate-200 space-y-10">
+                <!-- Profile Settings -->
+                <div class="space-y-6">
+                    <h3 class="font-bold text-xl border-b border-slate-100 pb-4">Profile</h3>
+                    <div class="space-y-4">
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase">Your Name</label>
+                            <input type="text" id="settings-name" placeholder="Enter your name" 
+                                class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 transition-all">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase">Monthly Budget ($)</label>
+                            <input type="number" id="settings-budget" placeholder="500.00" 
+                                class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 transition-all">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- App Settings -->
+                <div class="space-y-6">
+                    <h3 class="font-bold text-xl border-b border-slate-100 pb-4">Data Management</h3>
+                    <div class="flex items-center justify-between p-4 bg-red-50 rounded-2xl border border-red-100">
+                        <div>
+                            <p class="font-bold text-red-900">Clear All Data</p>
+                            <p class="text-xs text-red-600">This action cannot be undone.</p>
+                        </div>
+                        <button onclick="clearAllData()" class="px-6 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-200 active:scale-95">
+                            Reset
+                        </button>
+                    </div>
+                </div>
+
+                <button onclick="saveSettings()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 active:scale-95">
+                    Save Changes
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // State Management
+        let expenses = JSON.parse(localStorage.getItem('student_expenses')) || [];
+        let config = JSON.parse(localStorage.getItem('student_config')) || {
+            name: 'Student',
+            budget: 500
+        };
+
+        // DOM Elements
+        const expenseForm = document.getElementById('expense-form');
+        const expenseNameInput = document.getElementById('expense-name');
+        const expenseAmountInput = document.getElementById('expense-amount');
+        const expenseCategoryInput = document.getElementById('expense-category');
+        const expenseList = document.getElementById('expense-list');
+        const totalSpentEl = document.getElementById('total-spent');
+        const transactionCountEl = document.getElementById('transaction-count');
+        const emptyState = document.getElementById('empty-state');
+        
+        // Display Elements
+        const displayNameEl = document.getElementById('display-name');
+        const displayBudgetEl = document.getElementById('display-budget');
+        const displayRemainingEl = document.getElementById('display-remaining');
+        
+        // Settings Elements
+        const settingsNameInput = document.getElementById('settings-name');
+        const settingsBudgetInput = document.getElementById('settings-budget');
+
+        // Analytics Elements
+        const categoryStatsEl = document.getElementById('category-stats');
+        const topCategoryEl = document.getElementById('top-category');
+        const budgetPercentLabel = document.getElementById('budget-percent-label');
+        const budgetPercentValue = document.getElementById('budget-percent-value');
+        const budgetProgressBar = document.getElementById('budget-progress-bar');
+        const monthlyTipEl = document.getElementById('monthly-tip');
+
+        const tips = [
+            "Save at least 20% of your allowance for emergencies.",
+            "Track small daily expenses like coffee or snacks.",
+            "Use student discounts whenever possible.",
+            "Plan your meals ahead to avoid expensive eating out.",
+            "Review your subscriptions and cancel unused ones.",
+            "Set a weekly spending limit to stay on track."
+        ];
+
+        function rotateTip() {
+            const randomTip = tips[Math.floor(Math.random() * tips.length)];
+            monthlyTipEl.innerText = randomTip;
+        }
+        
+        // Rotate tip every time dashboard is visited
+        rotateTip();
+
+        // View Switching
+        function switchView(viewId) {
+            document.querySelectorAll('.view-section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(`${viewId}-view`).classList.remove('hidden');
+            
+            // Update Sidebar UI
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.classList.remove('active', 'bg-slate-900', 'text-white');
+                item.classList.add('text-slate-500');
+            });
+            const activeNav = document.getElementById(`nav-${viewId}`);
+            activeNav.classList.add('active', 'bg-slate-900', 'text-white');
+            activeNav.classList.remove('text-slate-500');
+
+            if (viewId === 'dashboard') rotateTip();
+            if (viewId === 'analytics') updateAnalytics();
+            if (viewId === 'settings') loadSettings();
+        }
+
+        // Functions
+        function updateUI() {
+            // Clear list
+            expenseList.innerHTML = '';
+            
+            let total = 0;
+            
+            if (expenses.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                
+                expenses.forEach((expense, index) => {
+                    total += parseFloat(expense.amount);
+                    
+                    const row = document.createElement('tr');
+                    row.className = 'transaction-row animate-slide-in';
+                    row.innerHTML = `
+                        <td class="px-8 py-5">
+                            <p class="font-bold text-slate-900">${expense.name}</p>
+                            <p class="text-xs text-slate-400">${new Date(expense.date).toLocaleDateString()}</p>
+                        </td>
+                        <td class="px-8 py-5">
+                            <span class="px-3 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-full uppercase tracking-wider">
+                                ${expense.category}
+                            </span>
+                        </td>
+                        <td class="px-8 py-5 font-black text-slate-900">
+                            $${parseFloat(expense.amount).toFixed(2)}
+                        </td>
+                        <td class="px-8 py-5 text-right">
+                            <button onclick="deleteExpense(${index})" class="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </td>
+                    `;
+                    expenseList.appendChild(row);
+                });
+            }
+
+            totalSpentEl.innerText = `$${total.toFixed(2)}`;
+            transactionCountEl.innerText = `${expenses.length} Items`;
+            
+            // Update Dashboard Stats
+            displayNameEl.innerText = config.name;
+            displayBudgetEl.innerText = `$${parseFloat(config.budget).toFixed(2)}`;
+            const remaining = config.budget - total;
+            displayRemainingEl.innerText = `$${remaining.toFixed(2)}`;
+            displayRemainingEl.parentElement.className = remaining < 0 
+                ? 'bg-red-50 p-5 rounded-3xl border border-red-100' 
+                : 'bg-amber-50 p-5 rounded-3xl border border-amber-100';
+            
+            // Re-initialize icons for new rows
+            lucide.createIcons();
+            
+            // Save to local storage
+            localStorage.setItem('student_expenses', JSON.stringify(expenses));
+        }
+
+        function updateAnalytics() {
+            const categories = ['Food', 'Transport', 'Study', 'Entertainment', 'Other'];
+            const totals = {};
+            categories.forEach(c => totals[c] = 0);
+            
+            let grandTotal = 0;
+            expenses.forEach(e => {
+                totals[e.category] += parseFloat(e.amount);
+                grandTotal += parseFloat(e.amount);
+            });
+
+            // Render Category Stats
+            categoryStatsEl.innerHTML = '';
+            let maxVal = 0;
+            let topCat = 'None';
+
+            categories.forEach(cat => {
+                const val = totals[cat];
+                if (val > maxVal) {
+                    maxVal = val;
+                    topCat = cat;
+                }
+                const percent = grandTotal > 0 ? (val / grandTotal * 100).toFixed(0) : 0;
+                
+                const statRow = document.createElement('div');
+                statRow.className = 'space-y-2';
+                statRow.innerHTML = `
+                    <div class="flex justify-between text-sm font-bold">
+                        <span class="text-slate-600">${cat}</span>
+                        <span class="text-slate-900">$${val.toFixed(2)} (${percent}%)</span>
+                    </div>
+                    <div class="overflow-hidden h-2 text-xs flex rounded-full bg-slate-100">
+                        <div style="width:${percent}%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-slate-400 transition-all duration-700"></div>
+                    </div>
+                `;
+                categoryStatsEl.appendChild(statRow);
+            });
+
+            topCategoryEl.innerText = topCat === 'None' ? 'None' : topCat;
+            
+            // Budget Progress
+            const budgetPercent = Math.min(100, (grandTotal / config.budget * 100)).toFixed(0);
+            budgetPercentLabel.innerText = `${budgetPercent}% Used`;
+            budgetPercentValue.innerText = `$${grandTotal.toFixed(0)} / $${config.budget}`;
+            budgetProgressBar.style.width = `${budgetPercent}%`;
+            budgetProgressBar.className = budgetPercent > 90 
+                ? 'shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-red-500 transition-all duration-500' 
+                : 'shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-slate-900 transition-all duration-500';
+        }
+
+        function loadSettings() {
+            settingsNameInput.value = config.name;
+            settingsBudgetInput.value = config.budget;
+        }
+
+        function saveSettings() {
+            config.name = settingsNameInput.value || 'Student';
+            config.budget = parseFloat(settingsBudgetInput.value) || 500;
+            localStorage.setItem('student_config', JSON.stringify(config));
+            updateUI();
+            alert('Settings saved successfully!');
+            switchView('dashboard');
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to delete all transactions and reset settings?')) {
+                expenses = [];
+                config = { name: 'Student', budget: 500 };
+                localStorage.removeItem('student_expenses');
+                localStorage.removeItem('student_config');
+                updateUI();
+                switchView('dashboard');
+            }
+        }
+
+        function addExpense(e) {
+            e.preventDefault();
+            
+            const newExpense = {
+                name: expenseNameInput.value,
+                amount: expenseAmountInput.value,
+                category: expenseCategoryInput.value,
+                date: new Date().toISOString()
+            };
+
+            expenses.unshift(newExpense);
+            updateUI();
+            
+            // Reset form
+            expenseForm.reset();
+            expenseNameInput.focus();
+        }
+
+        function deleteExpense(index) {
+            expenses.splice(index, 1);
+            updateUI();
+        }
+
+        // Event Listeners
+        expenseForm.addEventListener('submit', addExpense);
+
+        // Initial Render
+        updateUI();
+    </script>
+</body>
+</html>

@@ -1,2 +1,20 @@
-# simple-expense-tracker
-This is a basic personal finance tool for students. It allows users to list their daily expenses and automatically calculates the total amount spent. I focused on making the design clean and easy to use. It helped me learn how to handle user data and update a webpage in real-time.
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+</div>
+
+# Run and deploy your AI Studio app
+
+This contains everything you need to run your app locally.
+
+View your app in AI Studio: https://ai.studio/apps/bfe4e1fb-fe69-4570-99de-f653c611f02e
+
+## Run Locally
+
+**Prerequisites:**  Node.js
+
+
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`
